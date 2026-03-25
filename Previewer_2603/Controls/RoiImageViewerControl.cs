@@ -34,7 +34,7 @@ namespace Previewer_2603.Controls
 
         private void chkEdit_CheckedChanged(object sender, EventArgs e)
         {
-            if (chkEdit.Checked) chkEdit.Checked = false;
+            if (chkEdit.Checked) chkCreate.Checked = false;
             canvas.Mode = chkEdit.Checked ? RoiImageCanvas.InteractionMode.Edit :
                           chkCreate.Checked ? RoiImageCanvas.InteractionMode.Create :
                           RoiImageCanvas.InteractionMode.View;
@@ -78,12 +78,25 @@ namespace Previewer_2603.Controls
             add => canvas.ManualMeasureChanged += value;
             remove => canvas.ManualMeasureChanged -= value;
         }
+        public event EventHandler RoiCollectionChanged
+        {
+            add => canvas.RoiCollectionChanged += value;
+            remove => canvas.RoiCollectionChanged -= value;
+        }
+        public event EventHandler SelectedRoiChanged
+        {
+            add => canvas.SelectedRoiChanged += value;
+            remove => canvas.SelectedRoiChanged -= value;
+        }
 
         public void SetImage(Bitmap image, bool preserveView = true) => canvas.SetImage(image, preserveView);
         public void ResetView() => canvas.ResetView();
         public IReadOnlyList<RoiPolygon> GetRois() => canvas.GetRois();
         public void SetRois(IEnumerable<RoiPolygon> rois) => canvas.SetRois(rois);
         public void ClearRois() => canvas.ClearRois();
+        public int SelectedRoiIndex => canvas.SelectedRoiIndex;
+        public bool SelectRoiByIndex(int index) => canvas.SelectRoiByIndex(index);
+        public bool DeleteRoiByIndex(int index) => canvas.DeleteRoiByIndex(index);
         public void SaveRoisToJson(string filePath)
         {
             var rois = canvas.GetRois().ToList();

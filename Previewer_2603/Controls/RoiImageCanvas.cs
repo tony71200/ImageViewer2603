@@ -96,10 +96,12 @@ namespace Previewer_2603.Controls
 
         public event EventHandler<ManualMeasureEventArgs> ManualMeasureChanged;
         public event EventHandler<string> StatusChanged;
+        public event EventHandler RoiCollectionChanged;
+        public event EventHandler SelectedRoiChanged;
 
         public void SetImage(Bitmap image, bool preserveView = true)
         {
-            var hadImage = image != null;
+            var hadImage = _image != null;
             _image?.Dispose();
             _image = image;
 
@@ -127,6 +129,7 @@ namespace Previewer_2603.Controls
             if (rois != null) _rois.AddRange(rois.Select(r => r.Clone()));
             CancelCreate();
             Deselect();
+            RaiseRoiCollectionChanged();
             Invalidate();
         }
 
@@ -135,8 +138,11 @@ namespace Previewer_2603.Controls
             _rois?.Clear();
             CancelCreate();
             Deselect();
+            RaiseRoiCollectionChanged();
             Invalidate();
         }
+
+        public int SelectedRoiIndex => _selectedRoiIndex;
 
         protected override void Dispose(bool disposing)
         {
@@ -156,8 +162,9 @@ namespace Previewer_2603.Controls
 
             if (_image == null) return;
 
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            var isInteractive = _panning || _measuring || _creatingActive || _movingRoi || _selectedHandleIndex >= 0;
+            e.Graphics.SmoothingMode = isInteractive ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
+            e.Graphics.InterpolationMode = isInteractive ? InterpolationMode.Bilinear : InterpolationMode.HighQualityBicubic;
             // image space tranform
             e.Graphics.TranslateTransform(_offset.X, _offset.Y);
             e.Graphics.ScaleTransform(_scale, _scale);
@@ -500,6 +507,7 @@ namespace Previewer_2603.Controls
                 Points = _creatingPoints.Select(RoiPoint.From).ToList()
             };
             _rois.Add(roi);
+            RaiseRoiCollectionChanged();
 
             CancelCreate();
             SelectRoi(_rois.Count - 1);
@@ -595,9 +603,32 @@ namespace Previewer_2603.Controls
 
             _rois.RemoveAt(_selectedRoiIndex);
             Deselect();
+            RaiseRoiCollectionChanged();
 
             Invalidate();
             RaiseStatus($"Deleted: {name}");
+        }
+
+        public bool SelectRoiByIndex(int index)
+        {
+            if (index < 0 || index >= _rois.Count)
+            {
+                if (_selectedRoiIndex != -1) Deselect();
+                return false;
+            }
+
+            SelectRoi(index);
+            Invalidate();
+            return true;
+        }
+
+        public bool DeleteRoiByIndex(int index)
+        {
+            if (index < 0 || index >= _rois.Count) return false;
+
+            SelectRoi(index);
+            DeleteSelectedRoi();
+            return true;
         }
 
         private void SelectRoi(int index)
@@ -606,6 +637,7 @@ namespace Previewer_2603.Controls
             _selectedHandleIndex = -1;
             _movingRoi = false;
             _moveStartPoints = null;
+            RaiseSelectedRoiChanged();
         }
 
         private void Deselect()
@@ -614,6 +646,7 @@ namespace Previewer_2603.Controls
             _selectedHandleIndex = -1;
             _movingRoi = false;
             _moveStartPoints = null;
+            RaiseSelectedRoiChanged();
         }
 
         private int HitTestRoi(PointF img)
@@ -685,6 +718,8 @@ namespace Previewer_2603.Controls
         }
 
         private void RaiseStatus(string message) => StatusChanged?.Invoke(this, message ?? string.Empty);
+        private void RaiseRoiCollectionChanged() => RoiCollectionChanged?.Invoke(this, EventArgs.Empty);
+        private void RaiseSelectedRoiChanged() => SelectedRoiChanged?.Invoke(this, EventArgs.Empty);
 
         public sealed class ManualMeasureEventArgs : EventArgs
         {
