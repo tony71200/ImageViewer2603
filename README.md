@@ -44,7 +44,7 @@ It acts as a higher-level API over the canvas, so forms like `MainForm` can load
 
 ### Keyboard shortcuts
 - `Ctrl` (while creating polygon): constrain next segment to horizontal/vertical.
-- `Double-click` (Create mode): finalize polygon ROI.
+- `Right-click` (Create mode): finalize polygon ROI.
 - `Esc` (Create mode): cancel the current polygon creation.
 - `Delete` (Edit mode): delete selected ROI in canvas.
 - `Delete` (on external ROI ListBox in `MainForm`): delete selected ROI from list/canvas.
@@ -99,7 +99,7 @@ It acts as a higher-level API over the canvas, so forms like `MainForm` can load
 
 ### 快捷鍵說明
 - `Ctrl`（建立多邊形時）：限制下一條線段只能水平或垂直。
-- `滑鼠左鍵雙擊`（Create 模式）：完成多邊形 ROI。
+- `滑鼠右鍵`（Create 模式）：完成多邊形 ROI。
 - `Esc`（Create 模式）：取消目前的建立流程。
 - `Delete`（Edit 模式）：刪除目前選取 ROI。
 - `Delete`（`MainForm` 外部 ROI 清單 ListBox）：刪除清單中選取 ROI（同步到畫布）。

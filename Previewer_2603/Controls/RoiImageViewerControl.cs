@@ -27,7 +27,7 @@ namespace Previewer_2603.Controls
                           chkEdit.Checked ? RoiImageCanvas.InteractionMode.Edit :
                           RoiImageCanvas.InteractionMode.View;
             SetStatus(canvas.Mode == RoiImageCanvas.InteractionMode.Create ?
-                "Create ROI: Click to set points, double-click to finish. Hold Ctrl to lock horizontal/vertical orientation." :
+                "Create ROI: Left click to add points, right-click to finish. Hold Ctrl to lock horizontal/vertical orientation." :
                 "Ready");
             
         }

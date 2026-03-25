@@ -12,7 +12,7 @@ using System.Runtime.Serialization.Json;
 // Notes:
 // - Pan: Space + Left drag (any mode)
 // - Manual measure: Right drag when ManualMode=true
-// - Create: click to add points; Ctrl locks horizontal/vertical; double-click to finish
+// - Create: left click to add points; Ctrl locks horizontal/vertical; right-click to finish
 // - Edit: select ROI => show handles; drag handle or move ROI
 // ============================================================================
 namespace Previewer_2603.Controls
@@ -302,11 +302,23 @@ namespace Previewer_2603.Controls
             // Manual measure (keep behavior)
             if (ManualMode && e.Button == MouseButtons.Right)
             {
+                if (Mode == InteractionMode.Create)
+                {
+                    FinalizeCreate();
+                    return;
+                }
+
                 _measuring = true;
                 _measureStartImage = ScreenToImage(e.Location);
                 _measureEndImage = _measureStartImage;
                 Invalidate();
                 RaiseStatus("Measuring...");
+                return;
+            }
+
+            if (Mode == InteractionMode.Create && e.Button == MouseButtons.Right)
+            {
+                FinalizeCreate();
                 return;
             }
 
@@ -399,12 +411,6 @@ namespace Previewer_2603.Controls
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
             base.OnMouseDoubleClick(e);
-            if (_image == null) return;
-
-            if (Mode == InteractionMode.Create && e.Button == MouseButtons.Left)
-            {
-                FinalizeCreate();
-            }
         }
         #endregion
 
