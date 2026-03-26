@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Previewer_2603
 {
     public partial class MainForm : Form
     {
+        string Filename = string.Empty;
         public MainForm()
         {
             InitializeComponent();
@@ -30,17 +32,21 @@ namespace Previewer_2603
                 Title = "Select an image"
             })
             {
+                Filename = String.Empty;
                 if (openFileDialog.ShowDialog(this) != DialogResult.OK)
                 {
                     return;
                 }
 
                 txtb_filename.Text = openFileDialog.FileName;
+                Filename = Path.ChangeExtension(openFileDialog.FileName, null);
 
                 using (var loaded = new Bitmap(txtb_filename.Text))
                 {
                     viewer.SetImage(new Bitmap(loaded), false);
+                    viewer.ClearRois();
                 }
+                LoadROI(Filename);
                 RefreshRoiList();
             }
         }
@@ -89,10 +95,54 @@ namespace Previewer_2603
             }
         }
 
+        private void LoadROI(string directory)
+        {
+            var jsonPath = Filename;
+            if (Path.HasExtension(Filename))
+            {
+                jsonPath = Path.ChangeExtension(jsonPath, "json");
+            }
+            else
+            {
+                jsonPath += ".json";
+            }
+            if (File.Exists(jsonPath))
+            {
+                viewer.LoadRoisFromJson(jsonPath);
+                RefreshRoiList();
+            }
+        }
+
+        private void SaveROI()
+        {
+            var jsonPath = Filename;
+            if (Path.HasExtension(Filename))
+            {
+                jsonPath = Path.ChangeExtension(jsonPath, "json");
+            }
+            else
+            {
+                jsonPath += ".json";
+            }
+            viewer.SaveRoisToJson(jsonPath);
+        }
+
         private static string FormatRoiDisplay(RoiPolygon roi)
         {
             if (roi == null) return string.Empty;
             return $"{roi.Name} ({roi.Points.Count} pts)";
+        }
+
+        private void btn_loadROI_Click(object sender, EventArgs e)
+        {
+            if (!File.Exists(Filename)) return;
+            LoadROI(Filename);
+        }
+
+        private void btn_saveROI_Click(object sender, EventArgs e)
+        {
+            //if(!File.Exists(Filename)) return;
+            SaveROI();
         }
     }
 }

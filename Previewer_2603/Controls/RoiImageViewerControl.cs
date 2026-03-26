@@ -90,6 +90,17 @@ namespace Previewer_2603.Controls
         }
 
         public void SetImage(Bitmap image, bool preserveView = true) => canvas.SetImage(image, preserveView);
+        public void SetImagePath(string imagePath, bool preserveView = true)
+        {
+            if(imagePath == null) throw new ArgumentNullException(nameof(imagePath));
+            if(!Directory.Exists(imagePath))
+            {
+                SetStatus($"{imagePath} not exist");
+                return;
+            }
+            var bitmap = new Bitmap(imagePath);
+            canvas.SetImage(bitmap, preserveView);
+        }
         public void ResetView() => canvas.ResetView();
         public IReadOnlyList<RoiPolygon> GetRois() => canvas.GetRois();
         public void SetRois(IEnumerable<RoiPolygon> rois) => canvas.SetRois(rois);
