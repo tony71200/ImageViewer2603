@@ -34,6 +34,8 @@
             this.viewer = new Previewer_2603.Controls.RoiImageViewerControl();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.lstb_roi = new System.Windows.Forms.ListBox();
+            this.btn_loadROI = new System.Windows.Forms.Button();
+            this.btn_saveROI = new System.Windows.Forms.Button();
             this.flowLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -45,6 +47,8 @@
             // 
             this.flowLayoutPanel1.Controls.Add(this.openDlg_btn);
             this.flowLayoutPanel1.Controls.Add(this.txtb_filename);
+            this.flowLayoutPanel1.Controls.Add(this.btn_loadROI);
+            this.flowLayoutPanel1.Controls.Add(this.btn_saveROI);
             this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
@@ -66,7 +70,7 @@
             this.txtb_filename.Location = new System.Drawing.Point(84, 3);
             this.txtb_filename.Name = "txtb_filename";
             this.txtb_filename.ReadOnly = true;
-            this.txtb_filename.Size = new System.Drawing.Size(347, 22);
+            this.txtb_filename.Size = new System.Drawing.Size(522, 22);
             this.txtb_filename.TabIndex = 1;
             // 
             // viewer
@@ -106,6 +110,26 @@
             this.lstb_roi.Size = new System.Drawing.Size(151, 416);
             this.lstb_roi.TabIndex = 0;
             // 
+            // btn_loadROI
+            // 
+            this.btn_loadROI.Location = new System.Drawing.Point(612, 3);
+            this.btn_loadROI.Name = "btn_loadROI";
+            this.btn_loadROI.Size = new System.Drawing.Size(75, 23);
+            this.btn_loadROI.TabIndex = 2;
+            this.btn_loadROI.Text = "Load ROI";
+            this.btn_loadROI.UseVisualStyleBackColor = true;
+            this.btn_loadROI.Click += new System.EventHandler(this.btn_loadROI_Click);
+            // 
+            // btn_saveROI
+            // 
+            this.btn_saveROI.Location = new System.Drawing.Point(693, 3);
+            this.btn_saveROI.Name = "btn_saveROI";
+            this.btn_saveROI.Size = new System.Drawing.Size(75, 23);
+            this.btn_saveROI.TabIndex = 3;
+            this.btn_saveROI.Text = "Save ROI";
+            this.btn_saveROI.UseVisualStyleBackColor = true;
+            this.btn_saveROI.Click += new System.EventHandler(this.btn_saveROI_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -135,6 +159,8 @@
         private Controls.RoiImageViewerControl viewer;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.ListBox lstb_roi;
+        private System.Windows.Forms.Button btn_loadROI;
+        private System.Windows.Forms.Button btn_saveROI;
     }
 }
 

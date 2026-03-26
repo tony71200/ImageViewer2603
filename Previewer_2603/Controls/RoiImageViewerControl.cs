@@ -27,14 +27,14 @@ namespace Previewer_2603.Controls
                           chkEdit.Checked ? RoiImageCanvas.InteractionMode.Edit :
                           RoiImageCanvas.InteractionMode.View;
             SetStatus(canvas.Mode == RoiImageCanvas.InteractionMode.Create ?
-                "Create ROI: Click to set points, double-click to finish. Hold Ctrl to lock horizontal/vertical orientation." :
+                "Create ROI: Left click to add points, right-click to finish. Hold Ctrl to lock horizontal/vertical orientation." :
                 "Ready");
             
         }
 
         private void chkEdit_CheckedChanged(object sender, EventArgs e)
         {
-            if (chkEdit.Checked) chkEdit.Checked = false;
+            if (chkEdit.Checked) chkCreate.Checked = false;
             canvas.Mode = chkEdit.Checked ? RoiImageCanvas.InteractionMode.Edit :
                           chkCreate.Checked ? RoiImageCanvas.InteractionMode.Create :
                           RoiImageCanvas.InteractionMode.View;
@@ -78,12 +78,36 @@ namespace Previewer_2603.Controls
             add => canvas.ManualMeasureChanged += value;
             remove => canvas.ManualMeasureChanged -= value;
         }
+        public event EventHandler RoiCollectionChanged
+        {
+            add => canvas.RoiCollectionChanged += value;
+            remove => canvas.RoiCollectionChanged -= value;
+        }
+        public event EventHandler SelectedRoiChanged
+        {
+            add => canvas.SelectedRoiChanged += value;
+            remove => canvas.SelectedRoiChanged -= value;
+        }
 
         public void SetImage(Bitmap image, bool preserveView = true) => canvas.SetImage(image, preserveView);
+        public void SetImagePath(string imagePath, bool preserveView = true)
+        {
+            if(imagePath == null) throw new ArgumentNullException(nameof(imagePath));
+            if(!Directory.Exists(imagePath))
+            {
+                SetStatus($"{imagePath} not exist");
+                return;
+            }
+            var bitmap = new Bitmap(imagePath);
+            canvas.SetImage(bitmap, preserveView);
+        }
         public void ResetView() => canvas.ResetView();
         public IReadOnlyList<RoiPolygon> GetRois() => canvas.GetRois();
         public void SetRois(IEnumerable<RoiPolygon> rois) => canvas.SetRois(rois);
         public void ClearRois() => canvas.ClearRois();
+        public int SelectedRoiIndex => canvas.SelectedRoiIndex;
+        public bool SelectRoiByIndex(int index) => canvas.SelectRoiByIndex(index);
+        public bool DeleteRoiByIndex(int index) => canvas.DeleteRoiByIndex(index);
         public void SaveRoisToJson(string filePath)
         {
             var rois = canvas.GetRois().ToList();
