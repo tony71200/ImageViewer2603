@@ -5,6 +5,7 @@
 ### Purpose of `RoiImageViewerControl.cs`
 `RoiImageViewerControl` is a reusable WinForms user control that wraps:
 - A toolbar-like mode selector (`Create`, `Edit`).
+- A ROI shape selector (`Polygon`, `Rectangle`) for create mode.
 - A drawing canvas (`RoiImageCanvas`) for image display, pan/zoom, ROI creation/editing, and manual measurement.
 - Status text updates for user feedback.
 
@@ -39,18 +40,22 @@ It acts as a higher-level API over the canvas, so forms like `MainForm` can load
 - `ManualScaleToFull` (property): Measurement scale factor.
 - `SelectedRoiIndex` (property): Currently selected ROI index.
 - `ManualMeasureChanged` (event): Emits measurement result.
+- `ImageCoordinateChanged` (event): Emits real-image cursor coordinates.
 - `RoiCollectionChanged` (event): Emits when ROI set changes (add/delete/set/clear).
 - `SelectedRoiChanged` (event): Emits when selected ROI changes.
 
 ### Keyboard shortcuts
 - `Ctrl` (while creating polygon): constrain next segment to horizontal/vertical.
 - `Right-click` (Create mode): finalize polygon ROI.
+- `Rectangle` mode (Create): left-drag to generate a rectangle ROI automatically (4 corner points).
 - `Esc` (Create mode): cancel the current polygon creation.
 - `Delete` (Edit mode): delete selected ROI in canvas.
 - `Delete` (on external ROI ListBox in `MainForm`): delete selected ROI from list/canvas.
 - `R`: reset view (fit image).
 - `Q`: clear manual measurement line.
 - `Space + Left Drag`: pan image.
+- `Alt + Mouse Wheel` (Create/Edit mode): move image up/down.
+- `Shift + Alt + Mouse Wheel` (Create/Edit mode): move image left/right.
 - `Right Drag` (when `ManualMode=true`): manual measurement.
 
 ---
@@ -60,6 +65,7 @@ It acts as a higher-level API over the canvas, so forms like `MainForm` can load
 ### `RoiImageViewerControl.cs` 的目的
 `RoiImageViewerControl` 是可重複使用的 WinForms 使用者控制項，整合了：
 - 模式切換（`Create`、`Edit`）。
+- ROI 形狀選擇（`Polygon`、`Rectangle`，建立模式使用）。
 - 繪圖畫布（`RoiImageCanvas`），可進行影像顯示、縮放/平移、ROI 建立與編輯、手動量測。
 - 狀態列訊息顯示。
 
@@ -94,16 +100,20 @@ It acts as a higher-level API over the canvas, so forms like `MainForm` can load
 - `ManualScaleToFull`（屬性）：量測比例係數。
 - `SelectedRoiIndex`（屬性）：目前選取 ROI 索引。
 - `ManualMeasureChanged`（事件）：量測結果事件。
+- `ImageCoordinateChanged`（事件）：輸出影像座標（游標在原圖上的 X/Y）。
 - `RoiCollectionChanged`（事件）：ROI 集合改變事件（新增/刪除/設定/清空）。
 - `SelectedRoiChanged`（事件）：選取 ROI 改變事件。
 
 ### 快捷鍵說明
 - `Ctrl`（建立多邊形時）：限制下一條線段只能水平或垂直。
 - `滑鼠右鍵`（Create 模式）：完成多邊形 ROI。
+- `Rectangle`（建立模式）：滑鼠左鍵拖曳即可自動產生矩形 ROI（四個角點）。
 - `Esc`（Create 模式）：取消目前的建立流程。
 - `Delete`（Edit 模式）：刪除目前選取 ROI。
 - `Delete`（`MainForm` 外部 ROI 清單 ListBox）：刪除清單中選取 ROI（同步到畫布）。
 - `R`：重設視圖（自動符合視窗）。
 - `Q`：清除手動量測線。
 - `Space + 滑鼠左鍵拖曳`：平移影像。
+- `Alt + 滑鼠滾輪`（Create/Edit 模式）：上下移動影像。
+- `Shift + Alt + 滑鼠滾輪`（Create/Edit 模式）：左右移動影像。
 - `滑鼠右鍵拖曳`（`ManualMode=true`）：手動量測。
