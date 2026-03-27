@@ -17,7 +17,10 @@ namespace Previewer_2603.Controls
         public RoiImageViewerControl()
         {
             InitializeComponent();
-
+            roiTypeCmb.Items.Clear();
+            roiTypeCmb.Items.Add(RoiShapeKind.Polygon.ToString());
+            roiTypeCmb.Items.Add(RoiShapeKind.Rectangle.ToString());
+            roiTypeCmb.SelectedIndex = 0;
         }
 
         private void chkCreate_CheckedChanged(object sender, EventArgs e)
@@ -27,7 +30,7 @@ namespace Previewer_2603.Controls
                           chkEdit.Checked ? RoiImageCanvas.InteractionMode.Edit :
                           RoiImageCanvas.InteractionMode.View;
             SetStatus(canvas.Mode == RoiImageCanvas.InteractionMode.Create ?
-                "Create ROI: Left click to add points, right-click to finish. Hold Ctrl to lock horizontal/vertical orientation." :
+                "Create ROI: Select Polygon/Rectangle. Polygon: left click points, right-click to finish. Rectangle: drag to draw." :
                 "Ready");
             
         }
@@ -46,6 +49,25 @@ namespace Previewer_2603.Controls
         private void canvas_StatusChanged(object sender, string e)
         {
             SetStatus(e);
+        }
+
+        private void canvas_ImageCoordinateChanged(object sender, RoiImageCanvas.ImageCoordinateEventArgs e)
+        {
+            if (!e.HasImage)
+            {
+                Coordinate_lbl.Text = "X: -, Y: -";
+                return;
+            }
+
+            Coordinate_lbl.Text = $"X: {e.Point.X:F2}, Y: {e.Point.Y:F2}";
+        }
+
+        private void roiTypeCmb_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selected = roiTypeCmb.SelectedItem as string;
+            canvas.CreateShape = string.Equals(selected, RoiShapeKind.Rectangle.ToString(), StringComparison.OrdinalIgnoreCase)
+                ? RoiShapeKind.Rectangle
+                : RoiShapeKind.Polygon;
         }
 
         private void SetStatus(string message)
@@ -77,6 +99,11 @@ namespace Previewer_2603.Controls
         {
             add => canvas.ManualMeasureChanged += value;
             remove => canvas.ManualMeasureChanged -= value;
+        }
+        public event EventHandler<RoiImageCanvas.ImageCoordinateEventArgs> ImageCoordinateChanged
+        {
+            add => canvas.ImageCoordinateChanged += value;
+            remove => canvas.ImageCoordinateChanged -= value;
         }
         public event EventHandler RoiCollectionChanged
         {

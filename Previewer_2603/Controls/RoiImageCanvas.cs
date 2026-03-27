@@ -18,7 +18,7 @@ using System.Runtime.Serialization.Json;
 namespace Previewer_2603.Controls
 {
     [DataContract]
-    public sealed class RoiPolygon
+    public class RoiPolygon
     {
         [DataMember(Order = 0)]
         public string Id {  get; set; } = Guid.NewGuid().ToString("N");
@@ -26,6 +26,8 @@ namespace Previewer_2603.Controls
         public string Name { get; set; } = string.Empty;
         [DataMember(Order = 2)]
         public List<RoiPoint> Points { get; set; } = new List<RoiPoint>();
+        [DataMember(Order = 3)]
+        public string ShapeType { get; set; } = RoiShapeKind.Polygon.ToString();
 
         public RoiPolygon Clone()
         {
@@ -33,11 +35,27 @@ namespace Previewer_2603.Controls
             {
                 Id = Id,
                 Name = Name,
+                ShapeType = ShapeType,
                 Points = Points.Select(p => new RoiPoint { X = p.X, Y = p.Y }).ToList()
             };
         }
         public override string ToString() => $"{Name} ({Points.Count} pts)";
     }
+    [DataContract]
+    public sealed class RoiRectangle : RoiPolygon
+    {
+        public RoiRectangle()
+        {
+            ShapeType = RoiShapeKind.Rectangle.ToString();
+        }
+    }
+
+    public enum RoiShapeKind
+    {
+        Polygon,
+        Rectangle
+    }
+
     [DataContract]
     public sealed class RoiPoint
     {
@@ -73,6 +91,8 @@ namespace Previewer_2603.Controls
         private readonly List<PointF> _creatingPoints = new List<PointF>();
         private bool _creatingActive;
         private PointF? _creatingMouseImage;
+        private PointF? _creatingRectStartImage;
+        private PointF? _creatingRectCurrentImage;
 
         // Edit mode state
         private int _selectedRoiIndex = -1;
@@ -92,9 +112,11 @@ namespace Previewer_2603.Controls
         public bool ManualMode { get; set; }
         public double ManualScaleToFull {  get; set; } = 1.0;
         public InteractionMode Mode { get; set; } = InteractionMode.View;
+        public RoiShapeKind CreateShape { get; set; } = RoiShapeKind.Polygon;
         public Bitmap Image => _image;
 
         public event EventHandler<ManualMeasureEventArgs> ManualMeasureChanged;
+        public event EventHandler<ImageCoordinateEventArgs> ImageCoordinateChanged;
         public event EventHandler<string> StatusChanged;
         public event EventHandler RoiCollectionChanged;
         public event EventHandler SelectedRoiChanged;
@@ -113,6 +135,7 @@ namespace Previewer_2603.Controls
 
             if (!preserveView || !hadImage) FitToWindow();
             Invalidate();
+            RaiseImageCoordinateChanged(PointF.Empty, _image != null);
         }
 
         public void ResetView()
@@ -231,8 +254,19 @@ namespace Previewer_2603.Controls
             var width = 2f / SafeScale();
             using (var pen = new Pen(Color.DeepSkyBlue, width))
             using (var penDash = new Pen(Color.DeepSkyBlue, width) { DashStyle = DashStyle.Dash })
+            using (var penClosing = new Pen(Color.Orange, width) { DashStyle = DashStyle.Dash })
             using (var brush = new SolidBrush(Color.DeepSkyBlue))
             {
+                if (CreateShape == RoiShapeKind.Rectangle)
+                {
+                    if (_creatingRectStartImage.HasValue && _creatingRectCurrentImage.HasValue)
+                    {
+                        var rectPts = BuildRectanglePoints(_creatingRectStartImage.Value, _creatingRectCurrentImage.Value);
+                        g.DrawPolygon(pen, rectPts);
+                    }
+                    return;
+                }
+
                 var pts = _creatingPoints.ToArray();
                 if (pts.Length >= 2) g.DrawLines(pen, pts);
 
@@ -245,6 +279,11 @@ namespace Previewer_2603.Controls
                 if (pts.Length >= 1 && _creatingMouseImage.HasValue)
                 {
                     g.DrawLine(penDash, pts.Last(), _creatingMouseImage.Value);
+                }
+
+                if (pts.Length >= 3)
+                {
+                    g.DrawLine(penClosing, pts.Last(), pts[0]);
                 }
             }
         }
@@ -278,6 +317,22 @@ namespace Previewer_2603.Controls
         {
             base.OnMouseWheel(e);
             if (_image == null) return;
+
+            var altPressed = (ModifierKeys & Keys.Alt) == Keys.Alt;
+            if (altPressed && (Mode == InteractionMode.Create || Mode == InteractionMode.Edit))
+            {
+                var step = (e.Delta / 120f) * 24f;
+                if ((ModifierKeys & Keys.Shift) == Keys.Shift)
+                {
+                    _offset = new PointF(_offset.X + step, _offset.Y);
+                }
+                else
+                {
+                    _offset = new PointF(_offset.X, _offset.Y + step);
+                }
+                Invalidate();
+                return;
+            }
 
             var oldScale = _scale;
             var delta = e.Delta > 0 ? 1.1f : 0.9f;
@@ -354,6 +409,7 @@ namespace Previewer_2603.Controls
         {
             base.OnMouseMove(e);
             if (_image == null) return;
+            RaiseImageCoordinateChanged(ScreenToImage(e.Location), true);
 
             if (_measuring)
             {
@@ -398,6 +454,12 @@ namespace Previewer_2603.Controls
 
             if (e.Button == MouseButtons.Left)
             {
+                if (Mode == InteractionMode.Create && CreateShape == RoiShapeKind.Rectangle && _creatingActive)
+                {
+                    FinalizeCreateRectangle();
+                    return;
+                }
+
                 _panning = false;
 
                 if (Mode == InteractionMode.Edit)
@@ -418,6 +480,12 @@ namespace Previewer_2603.Controls
         {
             base.OnResize(e);
             FitToWindow();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            RaiseImageCoordinateChanged(PointF.Empty, false);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -456,6 +524,16 @@ namespace Previewer_2603.Controls
 
         private void HandleCreateMouseDown(MouseEventArgs e)
         {
+            if (CreateShape == RoiShapeKind.Rectangle)
+            {
+                _creatingActive = true;
+                _creatingRectStartImage = ScreenToImage(e.Location);
+                _creatingRectCurrentImage = _creatingRectStartImage;
+                Invalidate();
+                RaiseStatus("Create rectangle: drag to draw");
+                return;
+            }
+
             var p = ConstrainCreatePoint(ScreenToImage(e.Location));
             if (!_creatingActive)
             {
@@ -472,6 +550,14 @@ namespace Previewer_2603.Controls
 
         private void HandleCreateMouseMove(MouseEventArgs e)
         {
+            if (CreateShape == RoiShapeKind.Rectangle)
+            {
+                if (!_creatingActive || !_creatingRectStartImage.HasValue) return;
+                _creatingRectCurrentImage = ScreenToImage(e.Location);
+                Invalidate();
+                return;
+            }
+
             if (!_creatingActive && _creatingPoints.Count == 0) return;
 
             var raw = ScreenToImage(e.Location);
@@ -501,6 +587,12 @@ namespace Previewer_2603.Controls
 
         private void FinalizeCreate()
         {
+            if (CreateShape == RoiShapeKind.Rectangle)
+            {
+                FinalizeCreateRectangle();
+                return;
+            }
+
             if (_creatingPoints.Count < 3)
             {
                 RaiseStatus("Create: cần >= 3 điểm");
@@ -510,6 +602,7 @@ namespace Previewer_2603.Controls
             var roi = new RoiPolygon
             {
                 Name = $"ROI_{_rois.Count + 1}",
+                ShapeType = RoiShapeKind.Polygon.ToString(),
                 Points = _creatingPoints.Select(RoiPoint.From).ToList()
             };
             _rois.Add(roi);
@@ -527,7 +620,57 @@ namespace Previewer_2603.Controls
             _creatingActive = false;
             _creatingPoints.Clear();
             _creatingMouseImage = null;
+            _creatingRectStartImage = null;
+            _creatingRectCurrentImage = null;
             Invalidate();
+        }
+
+        private void FinalizeCreateRectangle()
+        {
+            if (!_creatingRectStartImage.HasValue || !_creatingRectCurrentImage.HasValue)
+            {
+                CancelCreate();
+                return;
+            }
+
+            var points = BuildRectanglePoints(_creatingRectStartImage.Value, _creatingRectCurrentImage.Value);
+            var width = Math.Abs(points[1].X - points[0].X);
+            var height = Math.Abs(points[2].Y - points[1].Y);
+            if (width < 1f || height < 1f)
+            {
+                CancelCreate();
+                RaiseStatus("Create rectangle: too small");
+                return;
+            }
+
+            var roi = new RoiRectangle
+            {
+                Name = $"ROI_{_rois.Count + 1}",
+                Points = points.Select(RoiPoint.From).ToList()
+            };
+
+            _rois.Add(roi);
+            RaiseRoiCollectionChanged();
+            CancelCreate();
+            SelectRoi(_rois.Count - 1);
+            Invalidate();
+            RaiseStatus($"Created: {roi.Name}");
+        }
+
+        private static PointF[] BuildRectanglePoints(PointF p1, PointF p2)
+        {
+            var left = Math.Min(p1.X, p2.X);
+            var right = Math.Max(p1.X, p2.X);
+            var top = Math.Min(p1.Y, p2.Y);
+            var bottom = Math.Max(p1.Y, p2.Y);
+
+            return new[]
+            {
+                new PointF(left, top),
+                new PointF(right, top),
+                new PointF(right, bottom),
+                new PointF(left, bottom)
+            };
         }
 
         private void HandleEditMouseDown(MouseEventArgs e)
@@ -722,6 +865,10 @@ namespace Previewer_2603.Controls
 
             ManualMeasureChanged?.Invoke(this, new ManualMeasureEventArgs(start, end, dx, dy));
         }
+        private void RaiseImageCoordinateChanged(PointF point, bool hasImage)
+        {
+            ImageCoordinateChanged?.Invoke(this, new ImageCoordinateEventArgs(point, hasImage));
+        }
 
         private void RaiseStatus(string message) => StatusChanged?.Invoke(this, message ?? string.Empty);
         private void RaiseRoiCollectionChanged() => RoiCollectionChanged?.Invoke(this, EventArgs.Empty);
@@ -740,6 +887,18 @@ namespace Previewer_2603.Controls
                 End = end;
                 Dx = dx;
                 Dy = dy;
+            }
+        }
+
+        public sealed class ImageCoordinateEventArgs : EventArgs
+        {
+            public PointF Point { get; }
+            public bool HasImage { get; }
+
+            public ImageCoordinateEventArgs(PointF point, bool hasImage)
+            {
+                Point = point;
+                HasImage = hasImage;
             }
         }
         #endregion

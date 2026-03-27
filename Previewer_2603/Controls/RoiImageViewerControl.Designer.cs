@@ -31,8 +31,10 @@
             this.topPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.chkCreate = new System.Windows.Forms.CheckBox();
             this.chkEdit = new System.Windows.Forms.CheckBox();
+            this.roiTypeCmb = new System.Windows.Forms.ComboBox();
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.Coordinate_lbl = new System.Windows.Forms.ToolStripStatusLabel();
             this.canvas = new Previewer_2603.Controls.RoiImageCanvas();
             this.topPanel.SuspendLayout();
             this.statusStrip.SuspendLayout();
@@ -42,11 +44,12 @@
             // 
             this.topPanel.Controls.Add(this.chkCreate);
             this.topPanel.Controls.Add(this.chkEdit);
+            this.topPanel.Controls.Add(this.roiTypeCmb);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Name = "topPanel";
             this.topPanel.Padding = new System.Windows.Forms.Padding(8, 2, 8, 2);
-            this.topPanel.Size = new System.Drawing.Size(640, 24);
+            this.topPanel.Size = new System.Drawing.Size(640, 30);
             this.topPanel.TabIndex = 0;
             // 
             // chkCreate
@@ -73,10 +76,21 @@
             this.chkEdit.UseVisualStyleBackColor = true;
             this.chkEdit.CheckedChanged += new System.EventHandler(this.chkEdit_CheckedChanged);
             // 
+            // roiTypeCmb
+            // 
+            this.roiTypeCmb.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.roiTypeCmb.FormattingEnabled = true;
+            this.roiTypeCmb.Location = new System.Drawing.Point(120, 3);
+            this.roiTypeCmb.Name = "roiTypeCmb";
+            this.roiTypeCmb.Size = new System.Drawing.Size(110, 20);
+            this.roiTypeCmb.TabIndex = 2;
+            this.roiTypeCmb.SelectedIndexChanged += new System.EventHandler(this.roiTypeCmb_SelectedIndexChanged);
+            // 
             // statusStrip
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusLabel});
+            this.statusLabel,
+            this.Coordinate_lbl});
             this.statusStrip.Location = new System.Drawing.Point(0, 458);
             this.statusStrip.Name = "statusStrip";
             this.statusStrip.Size = new System.Drawing.Size(640, 22);
@@ -89,18 +103,26 @@
             this.statusLabel.Size = new System.Drawing.Size(39, 17);
             this.statusLabel.Text = "Ready";
             // 
+            // Coordinate_lbl
+            // 
+            this.Coordinate_lbl.Name = "Coordinate_lbl";
+            this.Coordinate_lbl.Size = new System.Drawing.Size(57, 17);
+            this.Coordinate_lbl.Text = "X: -, Y: -";
+            // 
             // canvas
             // 
             this.canvas.BackColor = System.Drawing.Color.Black;
             this.canvas.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.canvas.Location = new System.Drawing.Point(0, 24);
+            this.canvas.Location = new System.Drawing.Point(0, 30);
+            this.canvas.CreateShape = Previewer_2603.Controls.RoiShapeKind.Polygon;
             this.canvas.ManualMode = false;
             this.canvas.ManualScaleToFull = 1D;
             this.canvas.Mode = Previewer_2603.Controls.RoiImageCanvas.InteractionMode.View;
             this.canvas.Name = "canvas";
-            this.canvas.Size = new System.Drawing.Size(640, 434);
+            this.canvas.Size = new System.Drawing.Size(640, 428);
             this.canvas.TabIndex = 2;
             this.canvas.Text = "roiImageCanvas1";
+            this.canvas.ImageCoordinateChanged += new System.EventHandler<Previewer_2603.Controls.RoiImageCanvas.ImageCoordinateEventArgs>(this.canvas_ImageCoordinateChanged);
             this.canvas.StatusChanged += new System.EventHandler<string>(this.canvas_StatusChanged);
             // 
             // RoiImageViewerControl
@@ -127,8 +149,10 @@
         private System.Windows.Forms.FlowLayoutPanel topPanel;
         private System.Windows.Forms.CheckBox chkCreate;
         private System.Windows.Forms.CheckBox chkEdit;
+        private System.Windows.Forms.ComboBox roiTypeCmb;
         private System.Windows.Forms.StatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel Coordinate_lbl;
         private RoiImageCanvas canvas;
     }
 }
