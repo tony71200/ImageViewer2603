@@ -120,7 +120,7 @@ namespace Previewer_2603.Controls
         public void SetImagePath(string imagePath, bool preserveView = true)
         {
             if(imagePath == null) throw new ArgumentNullException(nameof(imagePath));
-            if(!Directory.Exists(imagePath))
+            if(!File.Exists(imagePath))
             {
                 SetStatus($"{imagePath} not exist");
                 return;
