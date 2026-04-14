@@ -1,119 +1,83 @@
 # Previewer_2603
 
-## ROI Image Viewer Control (English)
+## Multi-canvas Workspace (English)
 
-### Purpose of `RoiImageViewerControl.cs`
-`RoiImageViewerControl` is a reusable WinForms user control that wraps:
-- A toolbar-like mode selector (`Create`, `Edit`).
-- A ROI shape selector (`Polygon`, `Rectangle`) for create mode.
-- A drawing canvas (`RoiImageCanvas`) for image display, pan/zoom, ROI creation/editing, and manual measurement.
-- Status text updates for user feedback.
+### What changed
+The main form now contains a **3-tab tag container** (`tagContainer`) so each MD-described component is available in one place:
+1. **Image Canvas** tab: base `ImageCanvas` viewer (pan/zoom/manual measure).
+2. **Alignment Canvas** tab: `AlignmentImageCanvas` for reference/test overlay and manual alignment.
+3. **ROI Canvas** tab: existing `RoiImageViewerControl` + ROI `ListBox` synchronization.
 
-It acts as a higher-level API over the canvas, so forms like `MainForm` can load images, manage ROI data, and react to ROI selection/list changes without touching canvas internals.
+### Components overview
+- `ImageCanvas.cs`
+  - Base image display control with pan/zoom, fit/reset, cursor coordinate event, and manual measurement event.
+- `AlignmentImageCanvas.cs`
+  - Inherits `ImageCanvas`, adds pivot/translate/rotate state and `AlignmentChanged` event.
+- `RoiImageCanvas.cs` + `RoiImageViewerControl.cs`
+  - Existing ROI create/edit/save/load flow, still synchronized with `MainForm` ROI list.
 
-### How to use
-1. Add `RoiImageViewerControl` to your form.
-2. Call `SetImage(Bitmap image, bool preserveView = true)` after the user selects an image file.
-3. Subscribe to events if needed:
-   - `RoiCollectionChanged`: update external ROI UI (for example, a `ListBox`).
-   - `SelectedRoiChanged`: synchronize selected ROI between canvas and external UI.
-   - `ManualMeasureChanged`: receive measurement data.
-4. Use external controls (like `ListBox`) to call:
-   - `SelectRoiByIndex(int index)` to select an ROI.
-   - `DeleteRoiByIndex(int index)` to remove an ROI.
-5. Use JSON helper methods when needed:
-   - `SaveRoisToJson(...)`
-   - `LoadRoisFromJson(...)`
+### Keyboard / mouse shortcuts
+#### Image Canvas
+- `Space + Left Drag`: pan.
+- `Mouse Wheel`: zoom in/out at cursor.
+- `Alt + Mouse Wheel`: vertical move.
+- `Shift + Alt + Mouse Wheel`: horizontal move.
+- `R`: reset view.
+- `Q`: clear measurement line.
+- `Right Drag` (`ManualMode=true`): manual measurement.
 
-### Tree List (API in `RoiImageViewerControl.cs`)
-- `SetImage(Bitmap image, bool preserveView = true)`: Load/replace image in the viewer.
-- `ResetView()`: Fit image to control and reset viewport.
-- `GetRois()`: Get cloned read-only list of current ROIs.
-- `SetRois(IEnumerable<RoiPolygon> rois)`: Replace all ROIs from external source.
-- `ClearRois()`: Remove all ROIs.
-- `SelectRoiByIndex(int index)`: Select ROI by index from external UI.
-- `DeleteRoiByIndex(int index)`: Delete ROI by index from external UI.
-- `SaveRoisToJson(string filePath)`: Save current ROIs to JSON file.
-- `LoadRoisFromJson(string filePath)`: Load ROIs from JSON file.
-- `Image` (property): Current loaded bitmap.
-- `ManualMode` (property): Enable/disable manual measurement mode.
-- `ManualScaleToFull` (property): Measurement scale factor.
-- `SelectedRoiIndex` (property): Currently selected ROI index.
-- `ManualMeasureChanged` (event): Emits measurement result.
-- `ImageCoordinateChanged` (event): Emits real-image cursor coordinates.
-- `RoiCollectionChanged` (event): Emits when ROI set changes (add/delete/set/clear).
-- `SelectedRoiChanged` (event): Emits when selected ROI changes.
+#### Alignment Canvas
+- Enable **Manual Alignment Mode** checkbox.
+- `Left Click`: set pivot (first click).
+- `Drag pivot`: translate test image.
+- `Drag orange arc`: rotate test image.
+- `Right Click`: clear pivot (keeps current transform values).
 
-### Keyboard shortcuts
-- `Ctrl` (while creating polygon): constrain next segment to horizontal/vertical.
+#### ROI Canvas
+- `Ctrl` (while creating polygon): constrain next segment horizontal/vertical.
 - `Right-click` (Create mode): finalize polygon ROI.
-- `Rectangle` mode (Create): left-drag to generate a rectangle ROI automatically (4 corner points).
-- `Esc` (Create mode): cancel the current polygon creation.
-- `Delete` (Edit mode): delete selected ROI in canvas.
-- `Delete` (on external ROI ListBox in `MainForm`): delete selected ROI from list/canvas.
-- `R`: reset view (fit image).
-- `Q`: clear manual measurement line.
-- `Space + Left Drag`: pan image.
-- `Alt + Mouse Wheel` (Create/Edit mode): move image up/down.
-- `Shift + Alt + Mouse Wheel` (Create/Edit mode): move image left/right.
-- `Right Drag` (when `ManualMode=true`): manual measurement.
+- `Rectangle` mode (Create): left-drag to generate rectangle ROI.
+- `Esc` (Create mode): cancel current ROI creation.
+- `Delete` (Edit mode or ROI ListBox): delete selected ROI.
 
 ---
 
-## ROI 影像檢視控制項（繁體中文）
+## 多畫布工作區（繁體中文）
 
-### `RoiImageViewerControl.cs` 的目的
-`RoiImageViewerControl` 是可重複使用的 WinForms 使用者控制項，整合了：
-- 模式切換（`Create`、`Edit`）。
-- ROI 形狀選擇（`Polygon`、`Rectangle`，建立模式使用）。
-- 繪圖畫布（`RoiImageCanvas`），可進行影像顯示、縮放/平移、ROI 建立與編輯、手動量測。
-- 狀態列訊息顯示。
+### 變更內容
+主畫面已改為 **3 個分頁的 tag 容器**（`tagContainer`），將文件描述的元件整合在同一視窗：
+1. **Image Canvas**：基礎 `ImageCanvas`（平移/縮放/手動量測）。
+2. **Alignment Canvas**：`AlignmentImageCanvas`（參考圖/測試圖疊合與手動對位）。
+3. **ROI Canvas**：原有 `RoiImageViewerControl` + `ListBox` 同步。
 
-此控制項提供比 `RoiImageCanvas` 更高階的操作介面，讓 `MainForm` 這類表單可以直接載入影像、同步 ROI 清單與選取狀態，而不需要耦合到畫布內部細節。
+### 元件說明
+- `ImageCanvas.cs`
+  - 提供基礎影像顯示、平移縮放、視圖重設、座標事件、手動量測事件。
+- `AlignmentImageCanvas.cs`
+  - 繼承 `ImageCanvas`，增加 pivot / 平移 / 旋轉與 `AlignmentChanged` 事件。
+- `RoiImageCanvas.cs` + `RoiImageViewerControl.cs`
+  - 保留原 ROI 建立/編輯/JSON 載入儲存流程，並維持與 `MainForm` ROI 清單同步。
 
-### 使用方式
-1. 將 `RoiImageViewerControl` 放到表單上。
-2. 使用者選圖後呼叫 `SetImage(Bitmap image, bool preserveView = true)`。
-3. 依需求訂閱事件：
-   - `RoiCollectionChanged`：更新外部 ROI 清單（例如 `ListBox`）。
-   - `SelectedRoiChanged`：同步畫布與外部清單的選取項目。
-   - `ManualMeasureChanged`：接收量測結果。
-4. 外部控制項可呼叫：
-   - `SelectRoiByIndex(int index)`：由清單選取 ROI。
-   - `DeleteRoiByIndex(int index)`：由清單刪除 ROI。
-5. 如需儲存/載入 ROI，可使用：
-   - `SaveRoisToJson(...)`
-   - `LoadRoisFromJson(...)`
-
-### Tree List（`RoiImageViewerControl.cs` 可用函式）
-- `SetImage(Bitmap image, bool preserveView = true)`：載入/替換影像。
-- `ResetView()`：重設檢視並自動縮放符合控制項。
-- `GetRois()`：取得目前 ROI（複本、唯讀）。
-- `SetRois(IEnumerable<RoiPolygon> rois)`：以外部資料一次替換全部 ROI。
-- `ClearRois()`：清空所有 ROI。
-- `SelectRoiByIndex(int index)`：從外部 UI 依索引選取 ROI。
-- `DeleteRoiByIndex(int index)`：從外部 UI 依索引刪除 ROI。
-- `SaveRoisToJson(string filePath)`：將 ROI 儲存成 JSON。
-- `LoadRoisFromJson(string filePath)`：從 JSON 載入 ROI。
-- `Image`（屬性）：目前載入影像。
-- `ManualMode`（屬性）：是否啟用手動量測模式。
-- `ManualScaleToFull`（屬性）：量測比例係數。
-- `SelectedRoiIndex`（屬性）：目前選取 ROI 索引。
-- `ManualMeasureChanged`（事件）：量測結果事件。
-- `ImageCoordinateChanged`（事件）：輸出影像座標（游標在原圖上的 X/Y）。
-- `RoiCollectionChanged`（事件）：ROI 集合改變事件（新增/刪除/設定/清空）。
-- `SelectedRoiChanged`（事件）：選取 ROI 改變事件。
-
-### 快捷鍵說明
-- `Ctrl`（建立多邊形時）：限制下一條線段只能水平或垂直。
-- `滑鼠右鍵`（Create 模式）：完成多邊形 ROI。
-- `Rectangle`（建立模式）：滑鼠左鍵拖曳即可自動產生矩形 ROI（四個角點）。
-- `Esc`（Create 模式）：取消目前的建立流程。
-- `Delete`（Edit 模式）：刪除目前選取 ROI。
-- `Delete`（`MainForm` 外部 ROI 清單 ListBox）：刪除清單中選取 ROI（同步到畫布）。
-- `R`：重設視圖（自動符合視窗）。
-- `Q`：清除手動量測線。
-- `Space + 滑鼠左鍵拖曳`：平移影像。
-- `Alt + 滑鼠滾輪`（Create/Edit 模式）：上下移動影像。
-- `Shift + Alt + 滑鼠滾輪`（Create/Edit 模式）：左右移動影像。
+### 快捷鍵與滑鼠操作
+#### Image Canvas
+- `Space + 滑鼠左鍵拖曳`：平移。
+- `滑鼠滾輪`：以游標為中心縮放。
+- `Alt + 滑鼠滾輪`：上下移動。
+- `Shift + Alt + 滑鼠滾輪`：左右移動。
+- `R`：重設視圖。
+- `Q`：清除量測線。
 - `滑鼠右鍵拖曳`（`ManualMode=true`）：手動量測。
+
+#### Alignment Canvas
+- 勾選 **Manual Alignment Mode**。
+- `滑鼠左鍵點擊`：設定 pivot（第一次點擊）。
+- `拖曳 pivot`：平移測試影像。
+- `拖曳橘色圓弧`：旋轉測試影像。
+- `滑鼠右鍵點擊`：清除 pivot（保留目前 transform 值）。
+
+#### ROI Canvas
+- `Ctrl`（建立多邊形時）：限制下一段為水平/垂直。
+- `滑鼠右鍵`（Create 模式）：完成多邊形 ROI。
+- `Rectangle`（Create 模式）：滑鼠左鍵拖曳建立矩形 ROI。
+- `Esc`（Create 模式）：取消目前建立流程。
+- `Delete`（Edit 模式或 ROI 清單）：刪除選取 ROI。

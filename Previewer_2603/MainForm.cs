@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Previewer_2603.Controls;
 
@@ -14,7 +8,8 @@ namespace Previewer_2603
 {
     public partial class MainForm : Form
     {
-        string Filename = string.Empty;
+        private string Filename = string.Empty;
+
         public MainForm()
         {
             InitializeComponent();
@@ -22,6 +17,7 @@ namespace Previewer_2603
             viewer.SelectedRoiChanged += Viewer_SelectedRoiChanged;
             lstb_roi.SelectedIndexChanged += lstb_roi_SelectedIndexChanged;
             lstb_roi.KeyDown += lstb_roi_KeyDown;
+            alignmentCanvas.AlignmentChanged += alignmentCanvas_AlignmentChanged;
         }
 
         private void openDlg_btn_Click(object sender, EventArgs e)
@@ -32,7 +28,6 @@ namespace Previewer_2603
                 Title = "Select an image"
             })
             {
-                Filename = String.Empty;
                 if (openFileDialog.ShowDialog(this) != DialogResult.OK)
                 {
                     return;
@@ -41,11 +36,17 @@ namespace Previewer_2603
                 txtb_filename.Text = openFileDialog.FileName;
                 Filename = Path.ChangeExtension(openFileDialog.FileName, null);
 
-                using (var loaded = new Bitmap(txtb_filename.Text))
+                using (var loaded = new Bitmap(openFileDialog.FileName))
                 {
+                    imageCanvas.SetImage(new Bitmap(loaded), false);
+                    alignmentCanvas.SetReferenceImage(new Bitmap(loaded));
+                    alignmentCanvas.SetTestImage(new Bitmap(loaded));
                     viewer.SetImage(new Bitmap(loaded), false);
                     viewer.ClearRois();
                 }
+
+                chkManualAlign.Checked = false;
+                alignmentCanvas.SetTransform(0, 0, 0);
                 LoadROI(Filename);
                 RefreshRoiList();
             }
@@ -95,17 +96,12 @@ namespace Previewer_2603
             }
         }
 
-        private void LoadROI(string directory)
+        private void LoadROI(string pathBase)
         {
-            var jsonPath = Filename;
-            if (Path.HasExtension(Filename))
-            {
-                jsonPath = Path.ChangeExtension(jsonPath, "json");
-            }
-            else
-            {
-                jsonPath += ".json";
-            }
+            var jsonPath = Path.HasExtension(pathBase)
+                ? Path.ChangeExtension(pathBase, "json")
+                : pathBase + ".json";
+
             if (File.Exists(jsonPath))
             {
                 viewer.LoadRoisFromJson(jsonPath);
@@ -115,15 +111,9 @@ namespace Previewer_2603
 
         private void SaveROI()
         {
-            var jsonPath = Filename;
-            if (Path.HasExtension(Filename))
-            {
-                jsonPath = Path.ChangeExtension(jsonPath, "json");
-            }
-            else
-            {
-                jsonPath += ".json";
-            }
+            var jsonPath = Path.HasExtension(Filename)
+                ? Path.ChangeExtension(Filename, "json")
+                : Filename + ".json";
             viewer.SaveRoisToJson(jsonPath);
         }
 
@@ -135,14 +125,30 @@ namespace Previewer_2603
 
         private void btn_loadROI_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(Filename)) return;
+            if (string.IsNullOrWhiteSpace(Filename)) return;
             LoadROI(Filename);
         }
 
         private void btn_saveROI_Click(object sender, EventArgs e)
         {
-            //if(!File.Exists(Filename)) return;
+            if (string.IsNullOrWhiteSpace(Filename)) return;
             SaveROI();
+        }
+
+        private void chkManualAlign_CheckedChanged(object sender, EventArgs e)
+        {
+            alignmentCanvas.Mode = chkManualAlign.Checked
+                ? AlignmentImageCanvas.AlignMode.ManualAlignment
+                : AlignmentImageCanvas.AlignMode.View;
+        }
+
+        private void alignmentCanvas_AlignmentChanged(object sender, AlignmentChangedEventArgs e)
+        {
+            var pivot = e.HasPivot ? $"({e.Pivot.X:F1}, {e.Pivot.Y:F1})" : "-";
+            alignmentInfo.Text =
+                $"Pivot: {pivot}{Environment.NewLine}" +
+                $"Offset: ({e.OffsetX:F1}, {e.OffsetY:F1}){Environment.NewLine}" +
+                $"Angle: {e.AngleDeg:F2}°";
         }
     }
 }
