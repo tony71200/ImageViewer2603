@@ -67,6 +67,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\AlignmentImageCanvas.cs" />
+    <Compile Include="Controls\ImageCanvas.cs" />
     <Compile Include="Controls\RoiImageCanvas.cs" />
     <Compile Include="Controls\RoiImageViewerControl.cs">
       <SubType>UserControl</SubType>
